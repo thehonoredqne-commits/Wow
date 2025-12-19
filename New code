@@ -1,1 +1,43 @@
+-- Roblox Mobile Crosshair & Tap Button Script
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Create ScreenGui
+local gui = Instance.new("ScreenGui")
+gui.Parent = playerGui
+gui.Name = "MobileCrosshairGui"
+
+-- Crosshair
+local crosshair = Instance.new("Frame")
+crosshair.Size = UDim2.new(0, 10, 0, 10) -- small square
+crosshair.Position = UDim2.new(0.5, 15, 0.5, 0) -- slightly right of center
+crosshair.AnchorPoint = Vector2.new(0.5, 0.5)
+crosshair.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+crosshair.BorderSizePixel = 0
+crosshair.Parent = gui
+
+-- Click Button
+local clickButton = Instance.new("TextButton")
+clickButton.Size = UDim2.new(0, 120, 0, 40)
+clickButton.Position = UDim2.new(0.5, -60, 0.9, 0) -- bottom middle
+clickButton.AnchorPoint = Vector2.new(0.5, 0.5)
+clickButton.Text = "Tap Crosshair"
+clickButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+clickButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+clickButton.Parent = gui
+
+-- Function to simulate tap
+clickButton.Activated:Connect(function()
+    -- Detect which GUI element is under the crosshair
+    local x = crosshair.AbsolutePosition.X + crosshair.AbsoluteSize.X/2
+    local y = crosshair.AbsolutePosition.Y + crosshair.AbsoluteSize.Y/2
+    local targetGui = playerGui:GetGuiObjectsAtPosition(x, y)[1]
+
+    if targetGui then
+        -- Simulate a tap on the GUI element
+        if targetGui:IsA("TextButton") or targetGui:IsA("ImageButton") then
+            targetGui:Activate()
+        end
+    end
+end)
 
