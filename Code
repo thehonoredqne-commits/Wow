@@ -172,7 +172,6 @@ else
 end
 
 if cfg.autoclick then
-    moveMouseAboveCenter()
     AutoClick.Text = "Auto Click (On) Z"
 	AutoClick.BackgroundColor3 = Color3.new(0, 1, 0)
 else 
@@ -416,6 +415,7 @@ local vu = game:GetService("VirtualUser")
 delay(0, function()
     while true do
         if cfg.autoclick then
+           moveMouseAboveCenter()
            vu:Button1Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
 		   vu:SetKeyDown("q")
            wait()
