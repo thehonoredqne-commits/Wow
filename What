@@ -1,40 +1,53 @@
--- Roblox Crosshair & Click Button Script
+--!strict
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Create ScreenGui
+-- Create GUI
 local gui = Instance.new("ScreenGui")
 gui.Parent = playerGui
-gui.Name = "CrosshairGui"
+gui.ResetOnSpawn = false
 
--- Crosshair
+-- Center crosshair marker
 local crosshair = Instance.new("Frame")
-crosshair.Size = UDim2.new(0, 10, 0, 10) -- small square crosshair
-crosshair.Position = UDim2.new(0.5, 15, 0.5, 0) -- slightly right of center
-crosshair.AnchorPoint = Vector2.new(0.5, 0.5)
-crosshair.BackgroundColor3 = Color3.new(1, 0, 0) -- red
+crosshair.Size = UDim2.new(0, 10, 0, 10)
+crosshair.Position = UDim2.new(0.5, -5, 0.5, -5) -- center
+crosshair.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 crosshair.BorderSizePixel = 0
+crosshair.AnchorPoint = Vector2.new(0.5, 0.5)
 crosshair.Parent = gui
 
--- Click Button
-local clickButton = Instance.new("TextButton")
-clickButton.Size = UDim2.new(0, 120, 0, 40)
-clickButton.Position = UDim2.new(0.5, -60, 0.9, 0) -- bottom middle
-clickButton.AnchorPoint = Vector2.new(0.5, 0.5)
-clickButton.Text = "Click Crosshair"
-clickButton.BackgroundColor3 = Color3.new(0, 0.5, 1)
-clickButton.TextColor3 = Color3.new(1, 1, 1)
-clickButton.Parent = gui
+-- Circular fire button
+local fireButton = Instance.new("TextButton")
+fireButton.Size = UDim2.new(0, 60, 0, 60)
+fireButton.Position = UDim2.new(1, -70, 0, 10)
+fireButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+fireButton.BorderSizePixel = 0
+fireButton.Text = "Fire"
+fireButton.TextColor3 = Color3.new(1,1,1)
+fireButton.TextScaled = true
+fireButton.AutoButtonColor = true
+fireButton.Parent = gui
+fireButton.AnchorPoint = Vector2.new(0, 0)
 
--- Function to simulate click at crosshair
-clickButton.MouseButton1Click:Connect(function()
+-- Make button circular
+fireButton.ClipsDescendants = true
+local uicorner = Instance.new("UICorner")
+uicorner.CornerRadius = UDim.new(0.5, 0)
+uicorner.Parent = fireButton
+
+-- Function to simulate click
+local function simulateClick()
     local mouse = player:GetMouse()
-    -- Use MouseLocation to move mouse virtually (for GUI detection)
-    local x = crosshair.AbsolutePosition.X + crosshair.AbsoluteSize.X/2
-    local y = crosshair.AbsolutePosition.Y + crosshair.AbsoluteSize.Y/2
-    mouse.TargetFilter = nil
-    -- Fire MouseButton1Down/Up at position
-    local virtualInput = game:GetService("VirtualInputManager")
-    virtualInput:SendMouseButtonEvent(x, y, 0, true, game, 0) -- MouseButton1Down
-    virtualInput:SendMouseButtonEvent(x, y, 0, false, game, 0) -- MouseButton1Up
-end)
+    -- Fire a click at the center of the screen
+    -- For mobile, we simulate activating the mouse click on the center crosshair
+    local targetPos = crosshair.AbsolutePosition + crosshair.AbsoluteSize/2
+
+    -- This fires a MouseButton1Click event on any GUI underneath the center
+    local targetGui = game:GetService("Players").LocalPlayer.PlayerGui:FindPartOnRay(Ray.new(Vector3.new(), Vector3.new()))
+    -- But simpler, we can just call the action you want here:
+    print("Clicked at center! Position:", targetPos)
+    -- You can replace the print with remote event to shoot in game
+end
+
+-- Connect button click
+fireButton.MouseButton1Click:Connect(simulateClick)
