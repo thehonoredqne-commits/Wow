@@ -1,6 +1,7 @@
 --!strict
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
 -- Create GUI
 local gui = Instance.new("ScreenGui")
@@ -35,19 +36,15 @@ local uicorner = Instance.new("UICorner")
 uicorner.CornerRadius = UDim.new(0.5, 0)
 uicorner.Parent = fireButton
 
--- Function to simulate click
-local function simulateClick()
-    local mouse = player:GetMouse()
-    -- Fire a click at the center of the screen
-    -- For mobile, we simulate activating the mouse click on the center crosshair
-    local targetPos = crosshair.AbsolutePosition + crosshair.AbsoluteSize/2
+-- Function to simulate a mouse click at the center
+local function simulateMouseClick()
+    local center = crosshair.AbsolutePosition + crosshair.AbsoluteSize / 2
 
-    -- This fires a MouseButton1Click event on any GUI underneath the center
-    local targetGui = game:GetService("Players").LocalPlayer.PlayerGui:FindPartOnRay(Ray.new(Vector3.new(), Vector3.new()))
-    -- But simpler, we can just call the action you want here:
-    print("Clicked at center! Position:", targetPos)
-    -- You can replace the print with remote event to shoot in game
+    -- Press down
+    VirtualInputManager:SendMouseButtonEvent(center.X, center.Y, Enum.UserInputType.MouseButton1, true, game, 0)
+    -- Release
+    VirtualInputManager:SendMouseButtonEvent(center.X, center.Y, Enum.UserInputType.MouseButton1, false, game, 0)
 end
 
 -- Connect button click
-fireButton.MouseButton1Click:Connect(simulateClick)
+fireButton.MouseButton1Click:Connect(simulateMouseClick)
