@@ -1,11 +1,13 @@
--- Teleport Behind Enemy on Touch
+-- Teleport Behind Enemy on Touch (FIXED)
+
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
-local TELEPORT_DISTANCE = 3 -- studs behind the enemy
+local TELEPORT_DISTANCE = 3      -- studs behind enemy
+local HEIGHT_OFFSET = 0          -- set to 1–2 if clipping happens
 local COOLDOWN = 1
 local canTP = true
 
@@ -13,22 +15,25 @@ local function onTouched(hit)
 	if not canTP then return end
 
 	local enemyChar = hit.Parent
-	if not enemyChar then return end
+	if not enemyChar or enemyChar == character then return end
 
 	local enemyHumanoid = enemyChar:FindFirstChild("Humanoid")
 	local enemyRoot = enemyChar:FindFirstChild("HumanoidRootPart")
 
-	-- Make sure it's another player
-	if enemyHumanoid and enemyRoot and enemyChar ~= character then
+	-- Make sure it's another player character
+	if enemyHumanoid and enemyRoot then
 		canTP = false
 
-		-- Position behind enemy
-		local behindPosition = enemyRoot.CFrame * CFrame.new(0, 0, -TELEPORT_DISTANCE)
+		-- ✅ ALWAYS BEHIND the enemy
+		local behindPosition =
+			enemyRoot.Position
+			- (enemyRoot.CFrame.LookVector * TELEPORT_DISTANCE)
+			+ Vector3.new(0, HEIGHT_OFFSET, 0)
 
-		-- Face same direction as enemy (their back)
-		humanoidRootPart.CFrame = CFrame.new(
-			behindPosition.Position,
-			behindPosition.Position + enemyRoot.CFrame.LookVector
+		-- ✅ Face their BACK
+		humanoidRootPart.CFrame = CFrame.lookAt(
+			behindPosition,
+			enemyRoot.Position
 		)
 
 		task.delay(COOLDOWN, function()
