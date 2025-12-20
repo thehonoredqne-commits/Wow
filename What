@@ -1,50 +1,41 @@
---!strict
-local player = game.Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-local VirtualInputManager = game:GetService("VirtualInputManager")
+-- Teleport Behind Enemy on Touch
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
--- Create GUI
-local gui = Instance.new("ScreenGui")
-gui.Parent = playerGui
-gui.ResetOnSpawn = false
+local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
--- Center crosshair marker
-local crosshair = Instance.new("Frame")
-crosshair.Size = UDim2.new(0, 10, 0, 10)
-crosshair.Position = UDim2.new(0.5, -5, 0.5, -5) -- center
-crosshair.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-crosshair.BorderSizePixel = 0
-crosshair.AnchorPoint = Vector2.new(0.5, 0.5)
-crosshair.Parent = gui
+local TELEPORT_DISTANCE = 3 -- studs behind the enemy
+local COOLDOWN = 1
+local canTP = true
 
--- Circular fire button
-local fireButton = Instance.new("TextButton")
-fireButton.Size = UDim2.new(0, 60, 0, 60)
-fireButton.Position = UDim2.new(1, -70, 0, 10)
-fireButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-fireButton.BorderSizePixel = 0
-fireButton.Text = "Fire"
-fireButton.TextColor3 = Color3.new(1,1,1)
-fireButton.TextScaled = true
-fireButton.AutoButtonColor = true
-fireButton.Parent = gui
-fireButton.AnchorPoint = Vector2.new(0, 0)
+local function onTouched(hit)
+	if not canTP then return end
 
--- Make button circular
-fireButton.ClipsDescendants = true
-local uicorner = Instance.new("UICorner")
-uicorner.CornerRadius = UDim.new(0.5, 0)
-uicorner.Parent = fireButton
+	local enemyChar = hit.Parent
+	if not enemyChar then return end
 
--- Function to simulate a mouse click at the center
-local function simulateMouseClick()
-    local center = crosshair.AbsolutePosition + crosshair.AbsoluteSize / 2
+	local enemyHumanoid = enemyChar:FindFirstChild("Humanoid")
+	local enemyRoot = enemyChar:FindFirstChild("HumanoidRootPart")
 
-    -- Press down
-    VirtualInputManager:SendMouseButtonEvent(center.X, center.Y, Enum.UserInputType.MouseButton1, true, game, 0)
-    -- Release
-    VirtualInputManager:SendMouseButtonEvent(center.X, center.Y, Enum.UserInputType.MouseButton1, false, game, 0)
+	-- Make sure it's another player
+	if enemyHumanoid and enemyRoot and enemyChar ~= character then
+		canTP = false
+
+		-- Position behind enemy
+		local behindPosition = enemyRoot.CFrame * CFrame.new(0, 0, -TELEPORT_DISTANCE)
+
+		-- Face same direction as enemy (their back)
+		humanoidRootPart.CFrame = CFrame.new(
+			behindPosition.Position,
+			behindPosition.Position + enemyRoot.CFrame.LookVector
+		)
+
+		task.delay(COOLDOWN, function()
+			canTP = true
+		end)
+	end
 end
 
--- Connect button click
-fireButton.MouseButton1Click:Connect(simulateMouseClick)
+-- Detect touch
+humanoidRootPart.Touched:Connect(onTouched)
