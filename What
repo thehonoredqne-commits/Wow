@@ -1,46 +1,66 @@
--- Teleport Behind Enemy on Touch (FIXED)
-
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local Camera = workspace.CurrentCamera
+
 local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Root = Character:WaitForChild("HumanoidRootPart")
 
-local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local CLICK_DELAY = 0.1 -- lower = faster spam
+local ENABLED = true
 
-local TELEPORT_DISTANCE = 3      -- studs behind enemy
-local HEIGHT_OFFSET = 0          -- set to 1–2 if clipping happens
-local COOLDOWN = 1
-local canTP = true
+-- Get farthest enemy player
+local function getFarthestEnemy()
+	local farthestPlayer = nil
+	local farthestDistance = 0
 
-local function onTouched(hit)
-	if not canTP then return end
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr ~= LocalPlayer and plr.Character then
+			local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+			local hum = plr.Character:FindFirstChild("Humanoid")
 
-	local enemyChar = hit.Parent
-	if not enemyChar or enemyChar == character then return end
-
-	local enemyHumanoid = enemyChar:FindFirstChild("Humanoid")
-	local enemyRoot = enemyChar:FindFirstChild("HumanoidRootPart")
-
-	-- Make sure it's another player character
-	if enemyHumanoid and enemyRoot then
-		canTP = false
-
-		-- ✅ ALWAYS BEHIND the enemy
-		local behindPosition =
-			enemyRoot.Position
-			- (enemyRoot.CFrame.LookVector * TELEPORT_DISTANCE)
-			+ Vector3.new(0, HEIGHT_OFFSET, 0)
-
-		-- ✅ Face their BACK
-		humanoidRootPart.CFrame = CFrame.lookAt(
-			behindPosition,
-			enemyRoot.Position
-		)
-
-		task.delay(COOLDOWN, function()
-			canTP = true
-		end)
+			if hrp and hum and hum.Health > 0 then
+				local dist = (Root.Position - hrp.Position).Magnitude
+				if dist > farthestDistance then
+					farthestDistance = dist
+					farthestPlayer = hrp
+				end
+			end
+		end
 	end
+
+	return farthestPlayer
 end
 
--- Detect touch
-humanoidRootPart.Touched:Connect(onTouched)
+-- Spam click loop
+task.spawn(function()
+	while ENABLED do
+		local target = getFarthestEnemy()
+		if target then
+			local screenPos, onScreen = Camera:WorldToViewportPoint(target.Position)
+
+			if onScreen then
+				VirtualInputManager:SendMouseButtonEvent(
+					screenPos.X,
+					screenPos.Y,
+					Enum.UserInputType.MouseButton1,
+					true,
+					game,
+					0
+				)
+
+				VirtualInputManager:SendMouseButtonEvent(
+					screenPos.X,
+					screenPos.Y,
+					Enum.UserInputType.MouseButton1,
+					false,
+					game,
+					0
+				)
+			end
+		end
+
+		task.wait(CLICK_DELAY)
+	end
+end)
