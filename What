@@ -1,7 +1,6 @@
 -- SERVICES
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
-local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 
@@ -12,12 +11,16 @@ gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
 -- SETTINGS
-local CLICK_DELAY = 0.15 -- click speed
+local CLICK_DELAY = 1.05
+
+-- STATES
+local clickingEnabled = true
+local circlesHidden = false
 
 -- STORAGE
 local circles = {}
 
--- CREATE CIRCLE FUNCTION
+-- CREATE CIRCLE
 local function createCircle(index, pos)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.fromOffset(50, 50)
@@ -32,7 +35,6 @@ local function createCircle(index, pos)
     btn.Active = true
     btn.Parent = gui
 
-    -- Make it a circle
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(1, 0)
     corner.Parent = btn
@@ -48,34 +50,63 @@ end
 -- CLICK LOOP
 task.spawn(function()
     while true do
-        for _, btn in pairs(circles) do
-            if btn and btn.Parent then
-                local absPos = btn.AbsolutePosition
-                local absSize = btn.AbsoluteSize
+        if clickingEnabled then
+            for _, btn in pairs(circles) do
+                if btn and btn.Parent then
+                    local absPos = btn.AbsolutePosition
+                    local absSize = btn.AbsoluteSize
+                    local x = absPos.X + absSize.X / 2
+                    local y = absPos.Y + absSize.Y / 2
 
-                local x = absPos.X + absSize.X / 2
-                local y = absPos.Y + absSize.Y / 2
-
-                -- Mouse click (Left Click)
-                VirtualInputManager:SendMouseButtonEvent(
-                    x,
-                    y,
-                    0,      -- Left mouse button
-                    true,   -- Button down
-                    game,
-                    0
-                )
-                task.wait()
-                VirtualInputManager:SendMouseButtonEvent(
-                    x,
-                    y,
-                    0,
-                    false,  -- Button up
-                    game,
-                    0
-                )
+                    VirtualInputManager:SendMouseButtonEvent(
+                        x, y, 0, true, game, 0
+                    )
+                    task.wait()
+                    VirtualInputManager:SendMouseButtonEvent(
+                        x, y, 0, false, game, 0
+                    )
+                end
             end
         end
         task.wait(CLICK_DELAY)
     end
 end)
+
+-- CREATE CONTROL BUTTON
+local function createControlButton(text, pos, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.fromOffset(160, 40)
+    btn.Position = pos
+    btn.Text = text
+    btn.TextSize = 16
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    btn.Parent = gui
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+-- CLICK TOGGLE BUTTON
+local clickToggle = createControlButton(
+    "Clicking: ON",
+    UDim2.new(0, 20, 0, 320),
+    function()
+        clickingEnabled = not clickingEnabled
+        clickToggle.Text = clickingEnabled and "Clicking: ON" or "Clicking: OFF"
+    end
+)
+
+-- VISIBILITY TOGGLE BUTTON
+local visibilityToggle = createControlButton(
+    "Circles: Visible",
+    UDim2.new(0, 20, 0, 370),
+    function()
+        circlesHidden = not circlesHidden
+        for _, btn in pairs(circles) do
+            btn.BackgroundTransparency = circlesHidden and 1 or 0
+            btn.TextTransparency = circlesHidden and 1 or 0
+        end
+        visibilityToggle.Text = circlesHidden and "Circles: Hidden" or "Circles: Visible"
+    end
+)
