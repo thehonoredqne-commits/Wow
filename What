@@ -1,26 +1,91 @@
 -- SERVICES
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
-
 local player = Players.LocalPlayer
 
--- GUI
-local gui = Instance.new("ScreenGui")
-gui.Name = "ClickCirclesGUI"
-gui.ResetOnSpawn = false
-gui.Parent = player:WaitForChild("PlayerGui")
-
 -- SETTINGS
-local CLICK_DELAY = 1.05
+local CLICK_DELAY = 1 -- 1 second delay (as requested)
 
 -- STATES
 local clickingEnabled = true
-local circlesHidden = false
+local circlesVisible = true
 
--- STORAGE
-local circles = {}
+-- GUI ROOT
+local gui = Instance.new("ScreenGui")
+gui.Name = "OrderedClickGUI"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
 
--- CREATE CIRCLE
+--------------------------------------------------
+-- DRAGGABLE CONTROL PANEL
+--------------------------------------------------
+local panel = Instance.new("Frame")
+panel.Size = UDim2.fromOffset(220, 140)
+panel.Position = UDim2.new(0, 20, 0, 20)
+panel.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+panel.Active = true
+panel.Draggable = true
+panel.Parent = gui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = panel
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Text = "Click Controller"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 18
+title.Parent = panel
+
+--------------------------------------------------
+-- BUTTON CREATOR
+--------------------------------------------------
+local function makeButton(text, yPos, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -20, 0, 35)
+    btn.Position = UDim2.new(0, 10, 0, yPos)
+    btn.Text = text
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 16
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+    btn.Parent = panel
+
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 8)
+    c.Parent = btn
+
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+--------------------------------------------------
+-- TOGGLES
+--------------------------------------------------
+local clickBtn
+clickBtn = makeButton("Clicking: ON", 40, function()
+    clickingEnabled = not clickingEnabled
+    clickBtn.Text = clickingEnabled and "Clicking: ON" or "Clicking: OFF"
+end)
+
+local visBtn
+visBtn = makeButton("Circles: Visible", 80, function()
+    circlesVisible = not circlesVisible
+    visBtn.Text = circlesVisible and "Circles: Visible" or "Circles: Hidden"
+    for _, c in pairs(circles) do
+        c.BackgroundTransparency = circlesVisible and 0 or 1
+        c.TextTransparency = circlesVisible and 0 or 1
+    end
+end)
+
+--------------------------------------------------
+-- CIRCLES
+--------------------------------------------------
+circles = {}
+
 local function createCircle(index, pos)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.fromOffset(50, 50)
@@ -29,84 +94,46 @@ local function createCircle(index, pos)
     btn.TextSize = 22
     btn.Font = Enum.Font.SourceSansBold
     btn.TextColor3 = Color3.new(1,1,1)
-    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
     btn.AutoButtonColor = false
-    btn.Draggable = true
     btn.Active = true
+    btn.Draggable = true
     btn.Parent = gui
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(1, 0)
-    corner.Parent = btn
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(1, 0)
+    c.Parent = btn
 
     circles[index] = btn
 end
 
--- CREATE 4 CIRCLES
 for i = 1, 4 do
-    createCircle(i, UDim2.new(0, 20, 0, 60 * i))
+    createCircle(i, UDim2.new(0, 20, 0, 180 + (i - 1) * 60))
 end
 
--- CLICK LOOP
+--------------------------------------------------
+-- ORDERED CLICK LOOP
+--------------------------------------------------
 task.spawn(function()
     while true do
         if clickingEnabled then
-            for _, btn in pairs(circles) do
+            for i = 1, 4 do
+                local btn = circles[i]
                 if btn and btn.Parent then
-                    local absPos = btn.AbsolutePosition
-                    local absSize = btn.AbsoluteSize
-                    local x = absPos.X + absSize.X / 2
-                    local y = absPos.Y + absSize.Y / 2
+                    local pos = btn.AbsolutePosition
+                    local size = btn.AbsoluteSize
+                    local x = pos.X + size.X / 2
+                    local y = pos.Y + size.Y / 2
 
-                    VirtualInputManager:SendMouseButtonEvent(
-                        x, y, 0, true, game, 0
-                    )
+                    VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 0)
                     task.wait()
-                    VirtualInputManager:SendMouseButtonEvent(
-                        x, y, 0, false, game, 0
-                    )
+                    VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 0)
+
+                    task.wait(CLICK_DELAY)
                 end
             end
+        else
+            task.wait(0.2)
         end
-        task.wait(CLICK_DELAY)
     end
 end)
-
--- CREATE CONTROL BUTTON
-local function createControlButton(text, pos, callback)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.fromOffset(160, 40)
-    btn.Position = pos
-    btn.Text = text
-    btn.TextSize = 16
-    btn.Font = Enum.Font.SourceSansBold
-    btn.TextColor3 = Color3.new(1,1,1)
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    btn.Parent = gui
-    btn.MouseButton1Click:Connect(callback)
-    return btn
-end
-
--- CLICK TOGGLE BUTTON
-local clickToggle = createControlButton(
-    "Clicking: ON",
-    UDim2.new(0, 20, 0, 320),
-    function()
-        clickingEnabled = not clickingEnabled
-        clickToggle.Text = clickingEnabled and "Clicking: ON" or "Clicking: OFF"
-    end
-)
-
--- VISIBILITY TOGGLE BUTTON
-local visibilityToggle = createControlButton(
-    "Circles: Visible",
-    UDim2.new(0, 20, 0, 370),
-    function()
-        circlesHidden = not circlesHidden
-        for _, btn in pairs(circles) do
-            btn.BackgroundTransparency = circlesHidden and 1 or 0
-            btn.TextTransparency = circlesHidden and 1 or 0
-        end
-        visibilityToggle.Text = circlesHidden and "Circles: Hidden" or "Circles: Visible"
-    end
-)
