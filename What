@@ -1,33 +1,46 @@
 -- Get the local player
 local player = game.Players.LocalPlayer
 
--- Services to scan
-local servicesToCheck = {
-    game:GetService("ReplicatedStorage"),
-    game:GetService("Workspace"),
-    game:GetService("ClientStorage") -- only if it exists
-}
+-- Create a simple ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AutoUpgradeSwordGUI"
+screenGui.Parent = player.PlayerGui
 
--- Recursive function to scan folders
-local function ScanForRemotes(parent, path)
-    for _, child in ipairs(parent:GetChildren()) do
-        local childPath = path.."/"..child.Name
-        if child:IsA("RemoteEvent") then
-            print("[RemoteEvent] Found at: "..childPath)
-        elseif child:IsA("RemoteFunction") then
-            print("[RemoteFunction] Found at: "..childPath)
-        elseif child:IsA("Folder") or child:IsA("ModuleScript") or child:IsA("Configuration") then
-            -- Recurse into folders, modules, or configs
-            ScanForRemotes(child, childPath)
-        end
+-- Create a toggle button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 200, 0, 50)
+toggleButton.Position = UDim2.new(0.5, -100, 0.5, -25) -- centered
+toggleButton.AnchorPoint = Vector2.new(0.5, 0.5)
+toggleButton.Text = "Auto Upgrade Sword: OFF"
+toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+toggleButton.TextColor3 = Color3.new(1, 1, 1)
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextSize = 18
+toggleButton.Parent = screenGui
+
+-- State variable
+local autoUpgradeActive = false
+
+-- Function to run auto-upgrades
+local function AutoUpgradeSword()
+    local remoteService = game:WaitForChild("ClientStorage"):WaitForChild("Client"):WaitForChild("Services"):WaitForChild("PersonalRemoteService")
+    local serverRemote = game:GetService("ServerScriptService"):WaitForChild("f71a33bb-67ed-4740-bb24-251f71c763a1")
+    
+    local args = { { remoteService, "72475603-84f3-4f05-89e4-2a1481c09f2c", "0.658061165515571", "d6bab4b9-7047-48d3-9922-d8cdeedf7ee3" } }
+
+    while autoUpgradeActive do
+        pcall(function()
+            serverRemote:InvokeServer(unpack(args))
+        end)
+        wait(0.2)
     end
 end
 
--- Run the scan for each service
-for _, service in ipairs(servicesToCheck) do
-    if service then
-        ScanForRemotes(service, service.Name)
+-- Button click toggles auto-upgrades
+toggleButton.MouseButton1Click:Connect(function()
+    autoUpgradeActive = not autoUpgradeActive
+    toggleButton.Text = "Auto Upgrade Sword: "..(autoUpgradeActive and "ON" or "OFF")
+    if autoUpgradeActive then
+        spawn(AutoUpgradeSword)
     end
-end
-
-print("✅ Scan complete! Check the Output for all RemoteEvents/RemoteFunctions.")
+end)
