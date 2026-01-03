@@ -1,89 +1,71 @@
--- Get the local player
-local player = game.Players.LocalPlayer
+-- SERVICES
+local Players = game:GetService("Players")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
--- Create ScreenGui
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AutoUpgradesGUI"
-screenGui.Parent = player.PlayerGui
+local player = Players.LocalPlayer
 
--- Helper to create toggle buttons
-local function CreateToggleButton(text, position)
-    local button = Instance.new("TextButton")
-    button.Size = UDim2.new(0, 220, 0, 50)
-    button.Position = position
-    button.AnchorPoint = Vector2.new(0.5, 0.5)
-    button.Text = text..": OFF"
-    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    button.TextColor3 = Color3.new(1,1,1)
-    button.Font = Enum.Font.SourceSansBold
-    button.TextSize = 18
-    button.Parent = screenGui
-    return button
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "TapCirclesGUI"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+-- SETTINGS
+local TAP_DELAY = 0.15 -- tap speed
+
+-- STORAGE
+local circles = {}
+
+-- CREATE CIRCLE FUNCTION
+local function createCircle(index, pos)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.fromOffset(50, 50)
+    btn.Position = pos
+    btn.Text = tostring(index)
+    btn.TextSize = 22
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    btn.AutoButtonColor = false
+    btn.Draggable = true
+    btn.Active = true
+    btn.Parent = gui
+
+    -- Round shape
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(1, 0)
+    corner.Parent = btn
+
+    circles[index] = {
+        button = btn,
+        enabled = true
+    }
 end
 
--- Buttons
-local swordButton = CreateToggleButton("Auto Sword", UDim2.new(0.5, 0, 0.4, -60))
-local classButton = CreateToggleButton("Auto Class", UDim2.new(0.5, 0, 0.5, -60))
-local realmButton = CreateToggleButton("Auto Realm", UDim2.new(0.5, 0, 0.6, -60))
+-- CREATE 4 CIRCLES
+for i = 1, 4 do
+    createCircle(i, UDim2.new(0, 20, 0, 60 * i))
+end
 
--- State variables
-local autoSword, autoClass, autoRealm = false, false, false
+-- TAP LOOP
+task.spawn(function()
+    while true do
+        for _, data in pairs(circles) do
+            local btn = data.button
+            if btn and btn.Parent then
+                local absPos = btn.AbsolutePosition
+                local absSize = btn.AbsoluteSize
+                local x = absPos.X + absSize.X / 2
+                local y = absPos.Y + absSize.Y / 2
 
--- Function templates
-local function AutoSword()
-    local remoteService = game:WaitForChild("ClientStorage"):WaitForChild("Client"):WaitForChild("Services"):WaitForChild("PersonalRemoteService")
-    local serverRemote = game:GetService("ServerScriptService"):WaitForChild("f71a33bb-67ed-4740-bb24-251f71c763a1")
-    local args = { { remoteService, "72475603-84f3-4f05-89e4-2a1481c09f2c", "0.658061165515571", "d6bab4b9-7047-48d3-9922-d8cdeedf7ee3" } }
-    
-    while autoSword do
-        pcall(function()
-            serverRemote:InvokeServer(unpack(args))
-        end)
-        wait(0.2)
+                -- Mobile tap simulation
+                VirtualInputManager:SendTouchEvent(0, Enum.UserInputState.Begin, x, y)
+                task.wait()
+                VirtualInputManager:SendTouchEvent(0, Enum.UserInputState.End, x, y)
+            end
+        end
+        task.wait(TAP_DELAY)
     end
-end
-
-local function AutoClass()
-    local remoteService = game:WaitForChild("ClientStorage"):WaitForChild("Client"):WaitForChild("Services"):WaitForChild("PersonalRemoteService")
-    local serverRemote = game:GetService("UserInputService"):WaitForChild("c98b3a90-7b35-430c-9fbb-b7cde7c161f1")
-    local args = { { remoteService, "08067edb-d83c-4e64-a123-03bfc4823bdc", "0.1404403466134245", "9c6d2024-4a1e-41d3-b069-58eb0c1547b7" } }
-    
-    while autoClass do
-        pcall(function()
-            serverRemote:InvokeServer(unpack(args))
-        end)
-        wait(2)
-    end
-end
-
-local function AutoRealm()
-    local remoteService = game:WaitForChild("ClientStorage"):WaitForChild("Client"):WaitForChild("Services"):WaitForChild("PersonalRemoteService")
-    local serverRemote = game:GetService("PhysicsService"):WaitForChild("bcc29e2a-61d5-4217-9229-1f0698a30646")
-    local args = { { remoteService, "5f2d4a48-03c4-42f5-9938-24c998d7fb74", "0.8957692338536427", "384fc7f2-8f79-4ac9-b013-4b8b1ae71009" } }
-    
-    while autoRealm do
-        pcall(function()
-            serverRemote:InvokeServer(unpack(args))
-        end)
-        wait(3)
-    end
-end
-
--- Toggle functions
-swordButton.MouseButton1Click:Connect(function()
-    autoSword = not autoSword
-    swordButton.Text = "Auto Sword: "..(autoSword and "ON" or "OFF")
-    if autoSword then spawn(AutoSword) end
-end)
-
-classButton.MouseButton1Click:Connect(function()
-    autoClass = not autoClass
-    classButton.Text = "Auto Class: "..(autoClass and "ON" or "OFF")
-    if autoClass then spawn(AutoClass) end
-end)
-
-realmButton.MouseButton1Click:Connect(function()
-    autoRealm = not autoRealm
-    realmButton.Text = "Auto Realm: "..(autoRealm and "ON" or "OFF")
-    if autoRealm then spawn(AutoRealm) end
 end)
