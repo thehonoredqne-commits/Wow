@@ -1,66 +1,21 @@
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local Camera = workspace.CurrentCamera
+-- SETTINGS
+local TOOL_NAME = "crimsonwrathsword"
+local TOGGLE_DELAY = 0.05 -- lower = faster (0.03–0.07 recommended)
 
-local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local Root = Character:WaitForChild("HumanoidRootPart")
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
 
-local CLICK_DELAY = 0.1 -- lower = faster spam
-local ENABLED = true
+local tool = character:WaitForChild(TOOL_NAME)
 
--- Get farthest enemy player
-local function getFarthestEnemy()
-	local farthestPlayer = nil
-	local farthestDistance = 0
+local running = true
 
-	for _, plr in ipairs(Players:GetPlayers()) do
-		if plr ~= LocalPlayer and plr.Character then
-			local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
-			local hum = plr.Character:FindFirstChild("Humanoid")
-
-			if hrp and hum and hum.Health > 0 then
-				local dist = (Root.Position - hrp.Position).Magnitude
-				if dist > farthestDistance then
-					farthestDistance = dist
-					farthestPlayer = hrp
-				end
-			end
-		end
-	end
-
-	return farthestPlayer
-end
-
--- Spam click loop
 task.spawn(function()
-	while ENABLED do
-		local target = getFarthestEnemy()
-		if target then
-			local screenPos, onScreen = Camera:WorldToViewportPoint(target.Position)
-
-			if onScreen then
-				VirtualInputManager:SendMouseButtonEvent(
-					screenPos.X,
-					screenPos.Y,
-					Enum.UserInputType.MouseButton1,
-					true,
-					game,
-					0
-				)
-
-				VirtualInputManager:SendMouseButtonEvent(
-					screenPos.X,
-					screenPos.Y,
-					Enum.UserInputType.MouseButton1,
-					false,
-					game,
-					0
-				)
-			end
+	while running do
+		if tool and tool.Parent == character then
+			tool.Enabled = false
+			task.wait()
+			tool.Enabled = true
 		end
-
-		task.wait(CLICK_DELAY)
+		task.wait(TOGGLE_DELAY)
 	end
 end)
