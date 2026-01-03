@@ -1,15 +1,12 @@
--- Get the local player
 local player = game.Players.LocalPlayer
 
--- Create a simple ScreenGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "AutoUpgradesGUI"
 screenGui.Parent = player.PlayerGui
 
--- Create a rectangular button
 local upgradeButton = Instance.new("TextButton")
 upgradeButton.Size = UDim2.new(0, 200, 0, 50)
-upgradeButton.Position = UDim2.new(0.5, -100, 0.5, -25) -- centered
+upgradeButton.Position = UDim2.new(0.5, -100, 0.5, -25)
 upgradeButton.AnchorPoint = Vector2.new(0.5, 0.5)
 upgradeButton.Text = "Activate Auto Upgrades"
 upgradeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
@@ -18,68 +15,54 @@ upgradeButton.Font = Enum.Font.SourceSansBold
 upgradeButton.TextSize = 18
 upgradeButton.Parent = screenGui
 
+-- Helper function to safely invoke a remote
+local function SafeInvoke(remote, args)
+    if remote and remote.InvokeServer then
+        pcall(function()
+            remote:InvokeServer(unpack(args))
+        end)
+    else
+        warn("Remote not found or invalid!")
+    end
+end
+
 -- Auto Upgrade Functions
 local function AutoUpdateSword()
+    local remote = game:GetService("ClientStorage"):WaitForChild("Client"):WaitForChild("Services"):WaitForChild("PersonalRemoteService")
+    local args = {remote, "e1ec24ca-4bae-42fa-abe0-dd42c86bfee7", "0.015175382731637717", "2dc11f3a-8f78-482c-8ec1-18d8609ebc46"}
     while true do
-        local args = {
-            [1] = {
-                [1] = game.ClientStorage.Client.Services.PersonalRemoteService,
-                [2] = "e1ec24ca-4bae-42fa-abe0-dd42c86bfee7",
-                [3] = "0.015175382731637717",
-                [4] = "2dc11f3a-8f78-482c-8ec1-18d8609ebc46"
-            }
-        }
-        game:GetService("Debris"):FindFirstChild("99bb4b26-e7df-407c-9db1-7682a9707d71"):InvokeServer(unpack(args))
+        SafeInvoke(remote, args)
         wait(0.2)
     end
 end
 
 local function AutoUpgradeClass()
+    local remote = game:GetService("ClientStorage"):WaitForChild("Client"):WaitForChild("Services"):WaitForChild("PersonalRemoteService")
+    local args = {remote, "e1ec24ca-4bae-42fa-abe0-dd42c86bfee7", "0.9111865098857481", "af9f2a18-a8af-413a-b241-e80412fa2121"}
     while true do
-        local args = {
-            [1] = {
-                [1] = game.ClientStorage.Client.Services.PersonalRemoteService,
-                [2] = "e1ec24ca-4bae-42fa-abe0-dd42c86bfee7",
-                [3] = "0.9111865098857481",
-                [4] = "af9f2a18-a8af-413a-b241-e80412fa2121"
-            }
-        }
-        game:GetService("Debris"):FindFirstChild("99bb4b26-e7df-407c-9db1-7682a9707d71"):InvokeServer(unpack(args))
+        SafeInvoke(remote, args)
         wait(2)
     end
 end
 
 local function AutoUpgradeShuriken()
+    local remote = game:GetService("ClientStorage"):WaitForChild("Client"):WaitForChild("Services"):WaitForChild("PersonalRemoteService")
+    local args = {remote, "e1ec24ca-4bae-42fa-abe0-dd42c86bfee7", "0.367493799962845", "aa500027-62d7-47a0-9d0e-08ca69af656d"}
     while true do
-        local args = {
-            [1] = {
-                [1] = game.ClientStorage.Client.Services.PersonalRemoteService,
-                [2] = "e1ec24ca-4bae-42fa-abe0-dd42c86bfee7",
-                [3] = "0.367493799962845",
-                [4] = "aa500027-62d7-47a0-9d0e-08ca69af656d"
-            }
-        }
-        game:GetService("Debris"):FindFirstChild("99bb4b26-e7df-407c-9db1-7682a9707d71"):InvokeServer(unpack(args))
+        SafeInvoke(remote, args)
         wait(3)
     end
 end
 
 local function AutoUpdateRank()
+    local remote = game:GetService("ClientStorage"):WaitForChild("Client"):WaitForChild("Services"):WaitForChild("PersonalRemoteService")
+    local args = {remote, "e1ec24ca-4bae-42fa-abe0-dd42c86bfee7", "0.7862685329829379", "5114fa9c-6eef-48b8-9b57-ff8c06f3f02b"}
     while true do
-        local args = {
-            [1] = {
-                [1] = game.ClientStorage.Client.Services.PersonalRemoteService,
-                [2] = "e1ec24ca-4bae-42fa-abe0-dd42c86bfee7",
-                [3] = "0.7862685329829379",
-                [4] = "5114fa9c-6eef-48b8-9b57-ff8c06f3f02b"
-            }
-        }
-        game:GetService("Debris"):FindFirstChild("99bb4b26-e7df-407c-9db1-7682a9707d71"):InvokeServer(unpack(args))
+        SafeInvoke(remote, args)
         wait(2)
     end
 end
 
--- Activate all auto-upgrades when the button is clicked
 upgradeButton.MouseButton1Click:Connect(function()
     spawn(AutoUpdateSword)
     spawn(AutoUpgradeClass)
