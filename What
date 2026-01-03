@@ -1,19 +1,18 @@
 -- SERVICES
 local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
-local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 
 -- GUI
 local gui = Instance.new("ScreenGui")
-gui.Name = "TapCirclesGUI"
+gui.Name = "ClickCirclesGUI"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
 -- SETTINGS
-local TAP_DELAY = 0.15 -- tap speed
+local CLICK_DELAY = 0.15 -- click speed
 
 -- STORAGE
 local circles = {}
@@ -33,15 +32,12 @@ local function createCircle(index, pos)
     btn.Active = true
     btn.Parent = gui
 
-    -- Round shape
+    -- Make it a circle
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(1, 0)
     corner.Parent = btn
 
-    circles[index] = {
-        button = btn,
-        enabled = true
-    }
+    circles[index] = btn
 end
 
 -- CREATE 4 CIRCLES
@@ -49,23 +45,37 @@ for i = 1, 4 do
     createCircle(i, UDim2.new(0, 20, 0, 60 * i))
 end
 
--- TAP LOOP
+-- CLICK LOOP
 task.spawn(function()
     while true do
-        for _, data in pairs(circles) do
-            local btn = data.button
+        for _, btn in pairs(circles) do
             if btn and btn.Parent then
                 local absPos = btn.AbsolutePosition
                 local absSize = btn.AbsoluteSize
+
                 local x = absPos.X + absSize.X / 2
                 local y = absPos.Y + absSize.Y / 2
 
-                -- Mobile tap simulation
-                VirtualInputManager:SendTouchEvent(0, Enum.UserInputState.Begin, x, y)
+                -- Mouse click (Left Click)
+                VirtualInputManager:SendMouseButtonEvent(
+                    x,
+                    y,
+                    0,      -- Left mouse button
+                    true,   -- Button down
+                    game,
+                    0
+                )
                 task.wait()
-                VirtualInputManager:SendTouchEvent(0, Enum.UserInputState.End, x, y)
+                VirtualInputManager:SendMouseButtonEvent(
+                    x,
+                    y,
+                    0,
+                    false,  -- Button up
+                    game,
+                    0
+                )
             end
         end
-        task.wait(TAP_DELAY)
+        task.wait(CLICK_DELAY)
     end
 end)
