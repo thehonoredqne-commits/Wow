@@ -27,3 +27,30 @@ while getgenv().autotrain do
     task.wait() -- frame-based spam (~30–60 times/sec)
 end
 
+
+-- TOGGLE
+getgenv().autoPress = true
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- button names to press
+local BUTTON_NAMES = {
+    "swordimgbtn",
+    "classimgbtn",
+    "ascendimgbtn"
+}
+
+while getgenv().autoPress do
+    local playerGui = player:WaitForChild("PlayerGui")
+
+    for _, name in ipairs(BUTTON_NAMES) do
+        local button = playerGui:FindFirstChild(name, true)
+
+        if button and button:IsA("GuiButton") then
+            button:Activate() -- acts like a real click
+        end
+    end
+
+    task.wait() -- presses once per second
+end
