@@ -33,24 +33,36 @@ getgenv().autoPress = true
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
+local VIM = game:GetService("VirtualInputManager")
 
--- button names to press
-local BUTTON_NAMES = {
+local BUTTON_ORDER = {
     "swordimgbtn",
     "classimgbtn",
     "ascendimgbtn"
 }
 
+local function clickButton(button)
+    local pos = button.AbsolutePosition
+    local size = button.AbsoluteSize
+
+    local x = pos.X + size.X / 2
+    local y = pos.Y + size.Y / 2
+
+    -- mouse down
+    VIM:SendMouseButtonEvent(x, y, 0, true, game, 0)
+    task.wait(0.05)
+    -- mouse up
+    VIM:SendMouseButtonEvent(x, y, 0, false, game, 0)
+end
+
 while getgenv().autoPress do
     local playerGui = player:WaitForChild("PlayerGui")
 
-    for _, name in ipairs(BUTTON_NAMES) do
-        local button = playerGui:FindFirstChild(name, true)
-
+    for _, buttonName in ipairs(BUTTON_ORDER) do
+        local button = playerGui:FindFirstChild(buttonName, true)
         if button and button:IsA("GuiButton") then
-            button:Activate() -- acts like a real click
+            clickButton(button)
         end
+        task.wait(0.3) -- wait between each button
     end
-
-    task.wait() -- presses once per second
 end
