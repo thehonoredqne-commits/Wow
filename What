@@ -1,139 +1,28 @@
--- SERVICES
+-- TOGGLE
+getgenv().autotrain = true
+
+-- VARIABLES
 local Players = game:GetService("Players")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 local player = Players.LocalPlayer
 
--- SETTINGS
-local CLICK_DELAY = 1 -- 1 second delay (as requested)
+local currentTool = nil
+local lastCheck = 0
+local CHECK_INTERVAL = 1 -- seconds
 
--- STATES
-local clickingEnabled = true
-local circlesVisible = true
+while getgenv().autotrain do
+    local now = os.clock()
 
--- GUI ROOT
-local gui = Instance.new("ScreenGui")
-gui.Name = "OrderedClickGUI"
-gui.ResetOnSpawn = false
-gui.Parent = player:WaitForChild("PlayerGui")
-
---------------------------------------------------
--- DRAGGABLE CONTROL PANEL
---------------------------------------------------
-local panel = Instance.new("Frame")
-panel.Size = UDim2.fromOffset(220, 140)
-panel.Position = UDim2.new(0, 20, 0, 20)
-panel.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-panel.Active = true
-panel.Draggable = true
-panel.Parent = gui
-
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 12)
-corner.Parent = panel
-
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 30)
-title.BackgroundTransparency = 1
-title.Text = "Click Controller"
-title.TextColor3 = Color3.new(1,1,1)
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 18
-title.Parent = panel
-
---------------------------------------------------
--- BUTTON CREATOR
---------------------------------------------------
-local function makeButton(text, yPos, callback)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -20, 0, 35)
-    btn.Position = UDim2.new(0, 10, 0, yPos)
-    btn.Text = text
-    btn.Font = Enum.Font.SourceSansBold
-    btn.TextSize = 16
-    btn.TextColor3 = Color3.new(1,1,1)
-    btn.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
-    btn.Parent = panel
-
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 8)
-    c.Parent = btn
-
-    btn.MouseButton1Click:Connect(callback)
-    return btn
-end
-
---------------------------------------------------
--- TOGGLES
---------------------------------------------------
-local clickBtn
-clickBtn = makeButton("Clicking: ON", 40, function()
-    clickingEnabled = not clickingEnabled
-    clickBtn.Text = clickingEnabled and "Clicking: ON" or "Clicking: OFF"
-end)
-
-local visBtn
-visBtn = makeButton("Circles: Visible", 80, function()
-    circlesVisible = not circlesVisible
-    visBtn.Text = circlesVisible and "Circles: Visible" or "Circles: Hidden"
-    for _, c in pairs(circles) do
-        c.BackgroundTransparency = circlesVisible and 0 or 1
-        c.TextTransparency = circlesVisible and 0 or 1
+    -- Recheck tool every 1 second
+    if now - lastCheck >= CHECK_INTERVAL then
+        local char = player.Character or player.CharacterAdded:Wait()
+        currentTool = char:FindFirstChildOfClass("Tool")
+        lastCheck = now
     end
-end)
 
---------------------------------------------------
--- CIRCLES
---------------------------------------------------
-circles = {}
-
-local function createCircle(index, pos)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.fromOffset(50, 50)
-    btn.Position = pos
-    btn.Text = tostring(index)
-    btn.TextSize = 22
-    btn.Font = Enum.Font.SourceSansBold
-    btn.TextColor3 = Color3.new(1,1,1)
-    btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-    btn.AutoButtonColor = false
-    btn.Active = true
-    btn.Draggable = true
-    btn.Parent = gui
-
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(1, 0)
-    c.Parent = btn
-
-    circles[index] = btn
-end
-
-for i = 1, 4 do
-    createCircle(i, UDim2.new(0, 20, 0, 180 + (i - 1) * 60))
-end
-
---------------------------------------------------
--- ORDERED CLICK LOOP
---------------------------------------------------
-task.spawn(function()
-    while true do
-        if clickingEnabled then
-            for i = 1, 4 do
-                local btn = circles[i]
-                if btn and btn.Parent then
-                    local pos = btn.AbsolutePosition
-                    local size = btn.AbsoluteSize
-                    local x = pos.X + size.X / 2
-                    local y = pos.Y + size.Y / 2
-
-                    VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 0)
-                    task.wait()
-                    VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 0)
-
-                    task.wait(CLICK_DELAY)
-                end
-            end
-        else
-            task.wait(0.2)
-        end
+    -- Spam activate (FAST)
+    if currentTool then
+        currentTool:Activate()
     end
-end)
+
+    task.wait() -- frame-based spam (~30–60 times/sec)
+end
