@@ -97,3 +97,42 @@ local function toggleNoclip(enabled)
         end
     end
 end
+
+-- Coordinate-based Auto Clicker (Mobile Friendly)
+
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local DELAY = 0.3
+local enabled = true
+
+-- === EDIT THESE COORDINATES ===
+-- Format: {X, Y}
+
+local UPGRADE_BTN = {900, 420}
+local NO_BTN      = {960, 560}
+local PROMOTE_BTN = {900, 620}
+local ASCEND_BTN  = {900, 720}
+
+-- click function
+local function tap(x, y)
+	VirtualInputManager:SendTouchEvent(0, x, y, true)
+	task.wait()
+	VirtualInputManager:SendTouchEvent(0, x, y, false)
+end
+
+-- main loop
+task.spawn(function()
+	while enabled do
+		tap(UPGRADE_BTN[1], UPGRADE_BTN[2])
+		task.wait(DELAY)
+
+		tap(NO_BTN[1], NO_BTN[2])
+		task.wait(DELAY)
+
+		tap(PROMOTE_BTN[1], PROMOTE_BTN[2])
+		task.wait(DELAY)
+
+		tap(ASCEND_BTN[1], ASCEND_BTN[2])
+		task.wait(DELAY)
+	end
+end)
