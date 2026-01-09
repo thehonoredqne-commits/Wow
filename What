@@ -3,6 +3,7 @@
 -- =========================
 getgenv().autotrain = true
 local autoClickEnabled = true
+local noclipEnabled = true -- safe noclip toggle
 
 -- =========================
 -- SERVICES & VARIABLES
@@ -10,6 +11,7 @@ local autoClickEnabled = true
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
+local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
@@ -60,34 +62,40 @@ end
 teleportOnce()
 
 -- =========================
--- NOCLIP (Auto-enabled, works after respawn)
+-- SAFE NOCLIP
 -- =========================
 local noclipConnection
 
 local function toggleNoclip(enabled)
-    if enabled then
-        -- Disconnect old connection if exists
-        if noclipConnection then noclipConnection:Disconnect() end
+    noclipEnabled = enabled
 
+    if noclipConnection then
+        noclipConnection:Disconnect()
+        noclipConnection = nil
+    end
+
+    if noclipEnabled then
         noclipConnection = RunService.Stepped:Connect(function()
-            local char = player.Character
-            if char then
-                for _, part in pairs(char:GetDescendants()) do
-                    if part:IsA("BasePart") then
+            local character = player.Character
+            if not character then return end
+            local hrp = character:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    -- Only disable collisions for non-floor parts
+                    if part ~= hrp and part.Position.Y > hrp.Position.Y - 3 then
                         part.CanCollide = false
+                    else
+                        part.CanCollide = true
                     end
                 end
             end
         end)
     else
-        if noclipConnection then
-            noclipConnection:Disconnect()
-            noclipConnection = nil
-        end
-
-        local char = player.Character
-        if char then
-            for _, part in pairs(char:GetDescendants()) do
+        local character = player.Character
+        if character then
+            for _, part in pairs(character:GetDescendants()) do
                 if part:IsA("BasePart") then
                     part.CanCollide = true
                 end
@@ -96,8 +104,17 @@ local function toggleNoclip(enabled)
     end
 end
 
--- Enable noclip immediately
+-- Enable safe noclip immediately
 toggleNoclip(true)
+
+-- Optional: Toggle with "N" key
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.N then
+        toggleNoclip(not noclipEnabled)
+        print("Safe noclip toggled:", noclipEnabled)
+    end
+end)
 
 -- =========================
 -- COORDINATE-BASED AUTO CLICKER (MOUSE)
@@ -105,7 +122,6 @@ toggleNoclip(true)
 local DELAY = 0.3
 
 -- === EDIT THESE COORDINATES ===
--- Format: {X, Y}
 local UPGRADE_BTN = {900, 420}
 local NO_BTN      = {960, 560}
 local PROMOTE_BTN = {900, 620}
