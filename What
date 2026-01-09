@@ -10,13 +10,12 @@ local hoverEnabled = true -- hover toggle
 -- =========================
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
 local humanoid = character:WaitForChild("Humanoid")
+local playerGui = player:WaitForChild("PlayerGui")
 
 -- =========================
 -- AUTO TRAIN
@@ -83,6 +82,7 @@ RunService.Stepped:Connect(function()
 end)
 
 -- Toggle hover with "H" key
+local UserInputService = game:GetService("UserInputService")
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode == Enum.KeyCode.H then
@@ -92,37 +92,31 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 -- =========================
--- MOUSE-BASED AUTO CLICKER (FIXED)
+-- BUTTON AUTO CLICKER (DIRECT EVENTS)
 -- =========================
 local DELAY = 0.3
 
--- === EDIT THESE COORDINATES ===
-local UPGRADE_BTN = {900, 420}
-local NO_BTN      = {960, 560}
-local PROMOTE_BTN = {900, 620}
-local ASCEND_BTN  = {900, 720}
+-- Wait for the buttons to exist in GUI
+local swordBtn   = playerGui:WaitForChild("SwordImgBtn")
+local classBtn   = playerGui:WaitForChild("ClassImgBtn")
+local ascendBtn  = playerGui:WaitForChild("AscendImgBtn")
 
--- Click function using VirtualInputManager (more reliable)
-local function click(x, y)
-    -- Press
-    VirtualInputManager:SendMouseButton1Down(x, y, true, game)
-    task.wait(0.05)
-    -- Release
-    VirtualInputManager:SendMouseButton1Up(x, y, true, game)
+-- Function to safely fire button
+local function fireButton(btn)
+    if btn and btn.Activated then
+        btn.Activated:Fire()
+    end
 end
 
 task.spawn(function()
     while autoClickEnabled do
-        click(UPGRADE_BTN[1], UPGRADE_BTN[2])
+        fireButton(swordBtn)
         task.wait(DELAY)
 
-        click(NO_BTN[1], NO_BTN[2])
+        fireButton(classBtn)
         task.wait(DELAY)
 
-        click(PROMOTE_BTN[1], PROMOTE_BTN[2])
-        task.wait(DELAY)
-
-        click(ASCEND_BTN[1], ASCEND_BTN[2])
+        fireButton(ascendBtn)
         task.wait(DELAY)
     end
 end)
