@@ -27,50 +27,40 @@ while getgenv().autotrain do
     task.wait() -- frame-based spam (~30–60 times/sec)
 end
 
-
--- Always-On Noclip (Press N to toggle OFF/ON)
+-- Teleport once to specific coordinates
 
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-
 local player = Players.LocalPlayer
-local noclip = true
-local connection
 
-local function enableNoclip()
-	connection = RunService.Stepped:Connect(function()
-		if player.Character then
-			for _, part in ipairs(player.Character:GetDescendants()) do
-				if part:IsA("BasePart") then
-					part.CanCollide = false
-				end
-			end
-		end
-	end)
+local TELEPORT_POSITION = Vector3.new(-435, 128, -444)
+local teleported = false
+
+local function teleportOnce()
+	if teleported then return end
+	teleported = true
+
+	local character = player.Character or player.CharacterAdded:Wait()
+	local hrp = character:WaitForChild("HumanoidRootPart")
+
+	hrp.CFrame = CFrame.new(TELEPORT_POSITION)
 end
 
-local function disableNoclip()
-	if connection then
-		connection:Disconnect()
-		connection = nil
-	end
+-- Teleport once to specific coordinates
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local TELEPORT_POSITION = Vector3.new(-435, 128, -444)
+local teleported = false
+
+local function teleportOnce()
+	if teleported then return end
+	teleported = true
+
+	local character = player.Character or player.CharacterAdded:Wait()
+	local hrp = character:WaitForChild("HumanoidRootPart")
+
+	hrp.CFrame = CFrame.new(TELEPORT_POSITION)
 end
 
--- Start noclip ON
-enableNoclip()
-
--- Toggle with N
-UserInputService.InputBegan:Connect(function(input, gp)
-	if gp then return end
-	if input.KeyCode == Enum.KeyCode.N then
-		noclip = not noclip
-		if noclip then
-			enableNoclip()
-			print("Noclip: ON")
-		else
-			disableNoclip()
-			print("Noclip: OFF")
-		end
-	end
-end)
+teleportOnce()
