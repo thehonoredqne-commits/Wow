@@ -3,7 +3,7 @@
 -- =========================
 getgenv().autotrain = true
 local autoClickEnabled = true
-local noclipEnabled = true -- safe noclip toggle
+local hoverEnabled = true -- hover toggle
 
 -- =========================
 -- SERVICES & VARIABLES
@@ -15,7 +15,8 @@ local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local hrp = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
 
 -- =========================
 -- AUTO TRAIN
@@ -47,7 +48,7 @@ end)
 -- =========================
 -- TELEPORT ONCE
 -- =========================
-local TELEPORT_POSITION = Vector3.new(-435, 128, -444)
+local TELEPORT_POSITION = Vector3.new(-435, 3000, -444)
 local teleported = false
 
 local function teleportOnce()
@@ -62,57 +63,32 @@ end
 teleportOnce()
 
 -- =========================
--- SAFE NOCLIP
+-- HOVER NOCLIP
 -- =========================
-local noclipConnection
+-- Hover height = current position
+local hoverY = hrp.Position.Y
 
-local function toggleNoclip(enabled)
-    noclipEnabled = enabled
+RunService.Stepped:Connect(function()
+    if hoverEnabled and character and hrp then
+        local pos = hrp.Position
+        hrp.Velocity = Vector3.new(0, 0, 0) -- stop vertical movement
+        hrp.CFrame = CFrame.new(Vector3.new(pos.X, hoverY, pos.Z))
 
-    if noclipConnection then
-        noclipConnection:Disconnect()
-        noclipConnection = nil
-    end
-
-    if noclipEnabled then
-        noclipConnection = RunService.Stepped:Connect(function()
-            local character = player.Character
-            if not character then return end
-            local hrp = character:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
-
-            for _, part in pairs(character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    -- Only disable collisions for non-floor parts
-                    if part ~= hrp and part.Position.Y > hrp.Position.Y - 3 then
-                        part.CanCollide = false
-                    else
-                        part.CanCollide = true
-                    end
-                end
-            end
-        end)
-    else
-        local character = player.Character
-        if character then
-            for _, part in pairs(character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                end
+        -- Disable collisions for character parts
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
             end
         end
     end
-end
+end)
 
--- Enable safe noclip immediately
-toggleNoclip(true)
-
--- Optional: Toggle with "N" key
+-- Toggle hover with "H" key
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    if input.KeyCode == Enum.KeyCode.N then
-        toggleNoclip(not noclipEnabled)
-        print("Safe noclip toggled:", noclipEnabled)
+    if input.KeyCode == Enum.KeyCode.H then
+        hoverEnabled = not hoverEnabled
+        print("Hover toggled:", hoverEnabled)
     end
 end)
 
