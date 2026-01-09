@@ -10,7 +10,7 @@ local hoverEnabled = true -- hover toggle
 -- =========================
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local VirtualUser = game:GetService("VirtualUser")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
@@ -48,7 +48,7 @@ end)
 -- =========================
 -- TELEPORT ONCE
 -- =========================
-local TELEPORT_POSITION = Vector3.new(-435, 3000, -444)
+local TELEPORT_POSITION = Vector3.new(-435, 128, -444)
 local teleported = false
 
 local function teleportOnce()
@@ -65,7 +65,6 @@ teleportOnce()
 -- =========================
 -- HOVER NOCLIP
 -- =========================
--- Hover height = current position
 local hoverY = hrp.Position.Y
 
 RunService.Stepped:Connect(function()
@@ -93,7 +92,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 -- =========================
--- COORDINATE-BASED AUTO CLICKER (MOUSE)
+-- MOUSE-BASED AUTO CLICKER (FIXED)
 -- =========================
 local DELAY = 0.3
 
@@ -103,9 +102,13 @@ local NO_BTN      = {960, 560}
 local PROMOTE_BTN = {900, 620}
 local ASCEND_BTN  = {900, 720}
 
+-- Click function using VirtualInputManager (more reliable)
 local function click(x, y)
-    VirtualUser:CaptureController()
-    VirtualUser:ClickButton1(Vector2.new(x, y))
+    -- Press
+    VirtualInputManager:SendMouseButton1Down(x, y, true, game)
+    task.wait(0.05)
+    -- Release
+    VirtualInputManager:SendMouseButton1Up(x, y, true, game)
 end
 
 task.spawn(function()
