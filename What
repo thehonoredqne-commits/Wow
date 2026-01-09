@@ -1,87 +1,81 @@
--- TOGGLE
+-- =========================
+-- TOGGLE SETTINGS
+-- =========================
 getgenv().autotrain = true
+local autoClickEnabled = true
 
--- VARIABLES
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-
-local currentTool = nil
-local lastCheck = 0
-local CHECK_INTERVAL = 1 -- seconds
-
-while getgenv().autotrain do
-    local now = os.clock()
-
-    -- Recheck tool every 1 second
-    if now - lastCheck >= CHECK_INTERVAL then
-        local char = player.Character or player.CharacterAdded:Wait()
-        currentTool = char:FindFirstChildOfClass("Tool")
-        lastCheck = now
-    end
-
-    -- Spam activate (FAST)
-    if currentTool then
-        currentTool:Activate()
-    end
-
-    task.wait() -- frame-based spam (~30–60 times/sec)
-end
-
--- Teleport once to specific coordinates
-
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-
-local TELEPORT_POSITION = Vector3.new(-435, 128, -444)
-local teleported = false
-
-local function teleportOnce()
-	if teleported then return end
-	teleported = true
-
-	local character = player.Character or player.CharacterAdded:Wait()
-	local hrp = character:WaitForChild("HumanoidRootPart")
-
-	hrp.CFrame = CFrame.new(TELEPORT_POSITION)
-end
-
--- Teleport once to specific coordinates
-
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-
-local TELEPORT_POSITION = Vector3.new(-435, 128, -444)
-local teleported = false
-
-local function teleportOnce()
-	if teleported then return end
-	teleported = true
-
-	local character = player.Character or player.CharacterAdded:Wait()
-	local hrp = character:WaitForChild("HumanoidRootPart")
-
-	hrp.CFrame = CFrame.new(TELEPORT_POSITION)
-end
-
-teleportOnce()
-
+-- =========================
+-- SERVICES & VARIABLES
+-- =========================
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local VirtualUser = game:GetService("VirtualUser")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
-local noclip = false
+-- =========================
+-- AUTO TRAIN
+-- =========================
+local currentTool = nil
+local lastCheck = 0
+local CHECK_INTERVAL = 1 -- seconds
+
+task.spawn(function()
+    while getgenv().autotrain do
+        local now = os.clock()
+
+        -- Recheck tool every 1 second
+        if now - lastCheck >= CHECK_INTERVAL then
+            character = player.Character or player.CharacterAdded:Wait()
+            currentTool = character:FindFirstChildOfClass("Tool")
+            lastCheck = now
+        end
+
+        -- Spam activate (FAST)
+        if currentTool then
+            currentTool:Activate()
+        end
+
+        task.wait() -- frame-based spam (~30–60 times/sec)
+    end
+end)
+
+-- =========================
+-- TELEPORT ONCE
+-- =========================
+local TELEPORT_POSITION = Vector3.new(-435, 128, -444)
+local teleported = false
+
+local function teleportOnce()
+    if teleported then return end
+    teleported = true
+
+    character = player.Character or player.CharacterAdded:Wait()
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    hrp.CFrame = CFrame.new(TELEPORT_POSITION)
+end
+
+teleportOnce()
+
+-- =========================
+-- NOCLIP (Auto-enabled, works after respawn)
+-- =========================
 local noclipConnection
 
 local function toggleNoclip(enabled)
-    noclip = enabled
-    if noclip then
+    if enabled then
+        -- Disconnect old connection if exists
+        if noclipConnection then noclipConnection:Disconnect() end
+
         noclipConnection = RunService.Stepped:Connect(function()
-            for _, v in pairs(character:GetDescendants()) do
-                if v:IsA("BasePart") and v.CanCollide then
-                    v.CanCollide = false
+            local char = player.Character
+            if char then
+                for _, part in pairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
                 end
             end
         end)
@@ -90,49 +84,50 @@ local function toggleNoclip(enabled)
             noclipConnection:Disconnect()
             noclipConnection = nil
         end
-        for _, v in pairs(character:GetDescendants()) do
-            if v:IsA("BasePart") then
-                v.CanCollide = true
+
+        local char = player.Character
+        if char then
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
             end
         end
     end
 end
 
--- Coordinate-based Auto Clicker (Mobile Friendly)
+-- Enable noclip immediately
+toggleNoclip(true)
 
-local VirtualInputManager = game:GetService("VirtualInputManager")
-
+-- =========================
+-- COORDINATE-BASED AUTO CLICKER (MOUSE)
+-- =========================
 local DELAY = 0.3
-local enabled = true
 
 -- === EDIT THESE COORDINATES ===
 -- Format: {X, Y}
-
 local UPGRADE_BTN = {900, 420}
 local NO_BTN      = {960, 560}
 local PROMOTE_BTN = {900, 620}
 local ASCEND_BTN  = {900, 720}
 
--- click function
-local function tap(x, y)
-	VirtualInputManager:SendTouchEvent(0, x, y, true)
-	task.wait()
-	VirtualInputManager:SendTouchEvent(0, x, y, false)
+local function click(x, y)
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton1(Vector2.new(x, y))
 end
 
--- main loop
 task.spawn(function()
-	while enabled do
-		tap(UPGRADE_BTN[1], UPGRADE_BTN[2])
-		task.wait(DELAY)
+    while autoClickEnabled do
+        click(UPGRADE_BTN[1], UPGRADE_BTN[2])
+        task.wait(DELAY)
 
-		tap(NO_BTN[1], NO_BTN[2])
-		task.wait(DELAY)
+        click(NO_BTN[1], NO_BTN[2])
+        task.wait(DELAY)
 
-		tap(PROMOTE_BTN[1], PROMOTE_BTN[2])
-		task.wait(DELAY)
+        click(PROMOTE_BTN[1], PROMOTE_BTN[2])
+        task.wait(DELAY)
 
-		tap(ASCEND_BTN[1], ASCEND_BTN[2])
-		task.wait(DELAY)
-	end
+        click(ASCEND_BTN[1], ASCEND_BTN[2])
+        task.wait(DELAY)
+    end
 end)
