@@ -28,41 +28,40 @@ while getgenv().autotrain do
 end
 
 
--- TOGGLE
-getgenv().autoPress = true
+-- Simple Noclip (Press N to toggle)
 
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
 local player = Players.LocalPlayer
-local VIM = game:GetService("VirtualInputManager")
+local noclip = false
+local connection
 
-local BUTTON_ORDER = {
-    "swordimgbtn",
-    "classimgbtn",
-    "ascendimgbtn"
-}
-
-local function clickButton(button)
-    local pos = button.AbsolutePosition
-    local size = button.AbsoluteSize
-
-    local x = pos.X + size.X / 2
-    local y = pos.Y + size.Y / 2
-
-    -- mouse down
-    VIM:SendMouseButtonEvent(x, y, 0, true, game, 0)
-    task.wait(0.05)
-    -- mouse up
-    VIM:SendMouseButtonEvent(x, y, 0, false, game, 0)
+local function setNoclip(state)
+	if state then
+		connection = RunService.Stepped:Connect(function()
+			if player.Character then
+				for _, part in ipairs(player.Character:GetDescendants()) do
+					if part:IsA("BasePart") then
+						part.CanCollide = false
+					end
+				end
+			end
+		end)
+	else
+		if connection then
+			connection:Disconnect()
+			connection = nil
+		end
+	end
 end
 
-while getgenv().autoPress do
-    local playerGui = player:WaitForChild("PlayerGui")
-
-    for _, buttonName in ipairs(BUTTON_ORDER) do
-        local button = playerGui:FindFirstChild(buttonName, true)
-        if button and button:IsA("GuiButton") then
-            clickButton(button)
-        end
-        task.wait(0.3) -- wait between each button
-    end
-end
+UserInputService.InputBegan:Connect(function(input, gp)
+	if gp then return end
+	if input.KeyCode == Enum.KeyCode.N then
+		noclip = not noclip
+		setNoclip(noclip)
+		print("Noclip:", noclip and "ON" or "OFF")
+	end
+end)
