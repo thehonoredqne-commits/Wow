@@ -28,40 +28,49 @@ while getgenv().autotrain do
 end
 
 
--- Simple Noclip (Press N to toggle)
+-- Always-On Noclip (Press N to toggle OFF/ON)
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
-local noclip = false
+local noclip = true
 local connection
 
-local function setNoclip(state)
-	if state then
-		connection = RunService.Stepped:Connect(function()
-			if player.Character then
-				for _, part in ipairs(player.Character:GetDescendants()) do
-					if part:IsA("BasePart") then
-						part.CanCollide = false
-					end
+local function enableNoclip()
+	connection = RunService.Stepped:Connect(function()
+		if player.Character then
+			for _, part in ipairs(player.Character:GetDescendants()) do
+				if part:IsA("BasePart") then
+					part.CanCollide = false
 				end
 			end
-		end)
-	else
-		if connection then
-			connection:Disconnect()
-			connection = nil
 		end
+	end)
+end
+
+local function disableNoclip()
+	if connection then
+		connection:Disconnect()
+		connection = nil
 	end
 end
 
+-- Start noclip ON
+enableNoclip()
+
+-- Toggle with N
 UserInputService.InputBegan:Connect(function(input, gp)
 	if gp then return end
 	if input.KeyCode == Enum.KeyCode.N then
 		noclip = not noclip
-		setNoclip(noclip)
-		print("Noclip:", noclip and "ON" or "OFF")
+		if noclip then
+			enableNoclip()
+			print("Noclip: ON")
+		else
+			disableNoclip()
+			print("Noclip: OFF")
+		end
 	end
 end)
