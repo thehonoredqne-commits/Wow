@@ -4,18 +4,22 @@
 getgenv().autotrain = true
 local autoClickEnabled = true
 local hoverEnabled = true -- hover toggle
+local DELAY = 0.3 -- click delay
 
 -- =========================
 -- SERVICES & VARIABLES
 -- =========================
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
 local humanoid = character:WaitForChild("Humanoid")
 local playerGui = player:WaitForChild("PlayerGui")
+local Mouse = player:GetMouse()
 
 -- =========================
 -- AUTO TRAIN
@@ -82,7 +86,6 @@ RunService.Stepped:Connect(function()
 end)
 
 -- Toggle hover with "H" key
-local UserInputService = game:GetService("UserInputService")
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode == Enum.KeyCode.H then
@@ -92,31 +95,31 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 -- =========================
--- BUTTON AUTO CLICKER (DIRECT EVENTS)
+-- EZPI-STYLE AUTO CLICKER
 -- =========================
-local DELAY = 0.3
 
--- Wait for the buttons to exist in GUI
-local swordBtn   = playerGui:WaitForChild("SwordImgBtn")
-local classBtn   = playerGui:WaitForChild("ClassImgBtn")
-local ascendBtn  = playerGui:WaitForChild("AscendImgBtn")
+-- GUI button coordinates (change if needed)
+local UPGRADE_BTN = {900, 420}
+local NO_BTN      = {960, 560}
+local PROMOTE_BTN = {900, 620}
+local ASCEND_BTN  = {900, 720}
 
--- Function to safely fire button
-local function fireButton(btn)
-    if btn and btn.Activated then
-        btn.Activated:Fire()
-    end
+-- Click function using Ezpi-style VirtualInputManager
+local function clickAt(x, y, interval)
+    interval = interval or DELAY
+    -- Press
+    VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 1)
+    -- Release
+    VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 1)
+    task.wait(interval)
 end
 
+-- Auto click loop
 task.spawn(function()
     while autoClickEnabled do
-        fireButton(swordBtn)
-        task.wait(DELAY)
-
-        fireButton(classBtn)
-        task.wait(DELAY)
-
-        fireButton(ascendBtn)
-        task.wait(DELAY)
+        clickAt(UPGRADE_BTN[1], UPGRADE_BTN[2], DELAY)
+        clickAt(NO_BTN[1], NO_BTN[2], DELAY)
+        clickAt(PROMOTE_BTN[1], PROMOTE_BTN[2], DELAY)
+        clickAt(ASCEND_BTN[1], ASCEND_BTN[2], DELAY)
     end
 end)
