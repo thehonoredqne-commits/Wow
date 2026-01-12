@@ -51,7 +51,7 @@ end)
 -- =========================
 -- TELEPORT ONCE
 -- =========================
-local TELEPORT_POSITION = Vector3.new(-435, 3000, -444)
+local TELEPORT_POSITION = Vector3.new(-435, 3500, -444)
 local teleported = false
 
 local function teleportOnce()
